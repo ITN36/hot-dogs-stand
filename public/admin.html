@@ -16,7 +16,10 @@
         <div id="admin-panel">
             <div class="admin-header">
                 <h1>Panel de Administración</h1>
-                <a href="index.html" class="btn-action" style="background: #444; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px;">Volver al Menú</a>
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn-finalizar-dia" class="btn-action" onclick="finalizarDia()" style="background: var(--success); color: white; display: none;">Finalizar día</button>
+                    <a href="index.html" class="btn-action" style="background: #444; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px;">Volver al Menú</a>
+                </div>
             </div>
             
             <div class="dashboard-grid">

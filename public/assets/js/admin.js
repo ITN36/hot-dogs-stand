@@ -41,8 +41,26 @@ async function renderAdmin() {
             else if (pedido.status === 'finalizado') listFinalizado.appendChild(card);
             else if (pedido.status === 'cancelado') listCancelado.appendChild(card);
         });
+        // Control del botón "Finalizar día"
+        const hayEnProceso = pedidos.some(p => p.status === 'proceso');
+        const hayPedidos = pedidos.length > 0;
+        const btnFinalizar = document.getElementById('btn-finalizar-dia');
+        if (btnFinalizar) {
+            btnFinalizar.style.display = (!hayEnProceso && hayPedidos) ? 'block' : 'none';
+        }
     } catch (e) {
         console.error("Error renderizando admin:", e);
+    }
+}
+
+async function finalizarDia() {
+    if (confirm("¿Estás seguro de que deseas finalizar el día? Se reiniciará el contador a 1.")) {
+        try {
+            await fetch('/api/pedidos', { method: 'DELETE' });
+            renderAdmin();
+        } catch (e) {
+            console.error("Error al finalizar día:", e);
+        }
     }
 }
 

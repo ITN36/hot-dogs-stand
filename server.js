@@ -10,11 +10,30 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Almacenamiento en memoria (se reinicia al apagar el servidor)
-// Para persistencia real, se usaría una base de datos.
+// Almacenamiento en memoria
 let pedidos = [];
+let lastResetDate = new Date().toLocaleDateString();
+
+// Función para reiniciar a medianoche
+function checkMidnightReset() {
+    const today = new Date().toLocaleDateString();
+    if (today !== lastResetDate) {
+        console.log("Reinicio automático de medianoche ejecutado.");
+        pedidos = [];
+        lastResetDate = today;
+    }
+}
+
+// Revisar cada minuto si ya es otro día
+setInterval(checkMidnightReset, 60000);
 
 // --- Endpoints API ---
+
+// Reiniciar el día manualmente
+app.delete('/api/pedidos', (req, res) => {
+    pedidos = [];
+    res.status(204).send();
+});
 
 // Obtener todos los pedidos
 app.get('/api/pedidos', (req, res) => {
