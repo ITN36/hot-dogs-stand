@@ -10,13 +10,16 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Configuración de Zona Horaria (Los Cabos BCS - America/Mazatlan)
+const TIMEZONE = 'America/Mazatlan';
+
 // Almacenamiento en memoria
 let pedidos = [];
-let lastResetDate = new Date().toLocaleDateString();
+let lastResetDate = new Date().toLocaleDateString('es-MX', { timeZone: TIMEZONE });
 
 // Función para reiniciar a medianoche
 function checkMidnightReset() {
-    const today = new Date().toLocaleDateString();
+    const today = new Date().toLocaleDateString('es-MX', { timeZone: TIMEZONE });
     if (today !== lastResetDate) {
         console.log("Reinicio automático de medianoche ejecutado.");
         pedidos = [];
@@ -47,7 +50,11 @@ app.post('/api/pedidos', (req, res) => {
     const nuevoPedido = {
         id: proximoNumero,
         status: 'proceso',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString('es-MX', { 
+            timeZone: TIMEZONE,
+            hour: '2-digit', 
+            minute: '2-digit' 
+        })
     };
     
     pedidos.push(nuevoPedido);
