@@ -57,6 +57,20 @@ function cambiarEstado(id, nuevoEstado) {
 
 // Inicialización al cargar el Dashboard
 window.onload = function() {
+    // Verificar si ya está autenticado en esta sesión
+    if (sessionStorage.getItem('isAdmin') !== 'true') {
+        const password = prompt("Por favor, ingresa la contraseña de administrador:");
+        
+        // window.CONFIG.ADMIN_PASSWORD será reemplazado por Docker/Render
+        if (password === window.CONFIG.ADMIN_PASSWORD) {
+            sessionStorage.setItem('isAdmin', 'true');
+        } else {
+            alert("Contraseña incorrecta. Acceso denegado.");
+            window.location.href = "index.html";
+            return;
+        }
+    }
+
     renderAdmin();
     // Actualizar cada 5 segundos por si hay nuevos pedidos
     setInterval(renderAdmin, 5000);
