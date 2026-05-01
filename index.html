@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hot Dogs - Menú</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div id="main-container" class="container">
+        <div id="queue-status">Tu número en fila: <span id="queue-number"></span></div>
+        
+        <h1>🌭 Hot Dog Stand</h1>
+        
+        <ul class="menu-list">
+            <li class="menu-item">
+                <span class="name">Hamburguesa</span>
+                <span class="price">$95</span>
+            </li>
+            <li class="menu-item">
+                <span class="name">Hot dog</span>
+                <span class="price">$35</span>
+            </li>
+            <li class="menu-item">
+                <span class="name">Quesaburro</span>
+                <span class="price">$110</span>
+            </li>
+        </ul>
+
+        <button id="btn-hacer-fila" class="btn-fila" onclick="hacerFila()">Hacer fila</button>
+    </div>
+
+    <!-- Acceso Admin -->
+    <a href="admin.html" class="btn-admin-link">
+        <span>⚙️ Acceso Admin</span>
+    </a>
+
+    <!-- JS -->
+    <script src="assets/js/app.js"></script>
+</body>
+</html>

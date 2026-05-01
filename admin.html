@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hot Dogs - Admin Dashboard</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/admin.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div id="main-container" class="container admin-mode">
+        <div id="admin-panel">
+            <div class="admin-header">
+                <h1>Panel de Administración</h1>
+                <a href="index.html" class="btn-action" style="background: #444; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px;">Volver al Menú</a>
+            </div>
+            
+            <div class="dashboard-grid">
+                <!-- En Proceso -->
+                <div class="column">
+                    <h3>🕒 En Proceso</h3>
+                    <div id="list-proceso"></div>
+                </div>
+                
+                <!-- Finalizados -->
+                <div class="column">
+                    <h3>✅ Finalizados</h3>
+                    <div id="list-finalizado"></div>
+                </div>
+
+                <!-- Cancelados -->
+                <div class="column">
+                    <h3>❌ Cancelados</h3>
+                    <div id="list-cancelado"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS -->
+    <script src="assets/js/admin.js"></script>
+</body>
+</html>
