@@ -54,7 +54,7 @@ async function renderAdmin() {
 }
 
 async function finalizarDia() {
-    if (confirm("¿Estás seguro de que deseas finalizar el día? Se reiniciará el contador a 1.")) {
+    if (confirm("¿Desea finalizar el día?")) {
         try {
             await fetch('/api/pedidos', { method: 'DELETE' });
             renderAdmin();

@@ -36,6 +36,8 @@ function checkMidnightReset() {
     if (today !== lastResetDate) {
         console.log("Reinicio automático de medianoche ejecutado.");
         pedidos = [];
+        // Reiniciar disponibilidad de productos
+        productos.forEach(p => p.disponible = true);
         lastResetDate = today;
     }
 }
@@ -66,6 +68,8 @@ app.put('/api/productos/:id', (req, res) => {
 // Reiniciar el día manualmente
 app.delete('/api/pedidos', (req, res) => {
     pedidos = [];
+    // Reiniciar disponibilidad de productos
+    productos.forEach(p => p.disponible = true);
     res.status(204).send();
 });
 
