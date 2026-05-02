@@ -83,7 +83,7 @@ window.onload = async function() {
                 status.style.display = 'block';
                 btn.disabled = true;
                 btn.innerText = 'Ya estás en fila';
-            } else if (pedidoEncontrado) {
+            } else {
                 localStorage.removeItem('miTurno');
             }
         } catch (e) {

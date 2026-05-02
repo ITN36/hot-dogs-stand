@@ -1,6 +1,6 @@
-const express = require('express');
 const path = require('path');
 const cors = require('cors');
+const { Pool } = require('pg');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,8 +13,43 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Configuración de Zona Horaria (Los Cabos BCS - America/Mazatlan)
 const TIMEZONE = 'America/Mazatlan';
 
-// Almacenamiento en memoria
-let pedidos = [];
+// Configuración de la base de datos
+if (!process.env.DATABASE_URL) {
+    console.error("CRITICAL ERROR: DATABASE_URL is not defined. The application will not be able to persist data.");
+}
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
+
+// Manejo de errores en el pool
+pool.on('error', (err, client) => {
+    console.error('Unexpected error on idle client', err);
+});
+
+// Inicializar tabla si no existe
+async function initDb() {
+    if (!process.env.DATABASE_URL) return;
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS pedidos (
+                id INTEGER PRIMARY KEY,
+                status VARCHAR(20) NOT NULL,
+                timestamp VARCHAR(10) NOT NULL
+            )
+        `);
+        console.log("Tabla 'pedidos' lista o ya existente.");
+    } catch (err) {
+        console.error("Error inicializando la base de datos:", err);
+    }
+}
+
+initDb();
+
+// Almacenamiento en memoria (se mantiene solo lastResetDate)
 let lastResetDate = new Date().toLocaleDateString('es-MX', { timeZone: TIMEZONE });
 
 let productos = [
@@ -31,14 +66,18 @@ let productos = [
 ];
 
 // Función para reiniciar a medianoche
-function checkMidnightReset() {
+async function checkMidnightReset() {
     const today = new Date().toLocaleDateString('es-MX', { timeZone: TIMEZONE });
     if (today !== lastResetDate) {
         console.log("Reinicio automático de medianoche ejecutado.");
-        pedidos = [];
-        // Reiniciar disponibilidad de productos
-        productos.forEach(p => p.disponible = true);
-        lastResetDate = today;
+        try {
+            await pool.query('TRUNCATE TABLE pedidos');
+            // Reiniciar disponibilidad de productos
+            productos.forEach(p => p.disponible = true);
+            lastResetDate = today;
+        } catch (err) {
+            console.error("Error en reinicio automático:", err);
+        }
     }
 }
 
@@ -66,47 +105,79 @@ app.put('/api/productos/:id', (req, res) => {
 });
 
 // Reiniciar el día manualmente
-app.delete('/api/pedidos', (req, res) => {
-    pedidos = [];
-    // Reiniciar disponibilidad de productos
-    productos.forEach(p => p.disponible = true);
-    res.status(204).send();
+app.delete('/api/pedidos', async (req, res) => {
+    try {
+        await pool.query('TRUNCATE TABLE pedidos');
+        // Reiniciar disponibilidad de productos
+        productos.forEach(p => p.disponible = true);
+        res.status(204).send();
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error al reiniciar pedidos');
+    }
 });
 
 // Obtener todos los pedidos
-app.get('/api/pedidos', (req, res) => {
-    res.json(pedidos);
+app.get('/api/pedidos', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM pedidos ORDER BY id ASC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error al obtener pedidos');
+    }
 });
 
 // Crear un nuevo pedido
-app.post('/api/pedidos', (req, res) => {
-    const proximoNumero = pedidos.length > 0 ? Math.max(...pedidos.map(p => p.id)) + 1 : 1;
-    
-    const nuevoPedido = {
-        id: proximoNumero,
-        status: 'proceso',
-        timestamp: new Date().toLocaleTimeString('es-MX', { 
+app.post('/api/pedidos', async (req, res) => {
+    try {
+        // Obtener el próximo número de pedido
+        const maxResult = await pool.query('SELECT MAX(id) as max_id FROM pedidos');
+        const proximoNumero = (maxResult.rows[0].max_id || 0) + 1;
+        
+        const timestamp = new Date().toLocaleTimeString('es-MX', { 
             timeZone: TIMEZONE,
             hour: '2-digit', 
             minute: '2-digit' 
-        })
-    };
-    
-    pedidos.push(nuevoPedido);
-    res.status(201).json(nuevoPedido);
+        });
+        
+        const nuevoPedido = {
+            id: proximoNumero,
+            status: 'proceso',
+            timestamp: timestamp
+        };
+        
+        await pool.query(
+            'INSERT INTO pedidos (id, status, timestamp) VALUES ($1, $2, $3)',
+            [nuevoPedido.id, nuevoPedido.status, nuevoPedido.timestamp]
+        );
+        
+        res.status(201).json(nuevoPedido);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error al crear pedido');
+    }
 });
 
 // Actualizar estado de un pedido
-app.put('/api/pedidos/:id', (req, res) => {
+app.put('/api/pedidos/:id', async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     
-    const pedido = pedidos.find(p => p.id === parseInt(id));
-    if (pedido) {
-        pedido.status = status;
-        res.json(pedido);
-    } else {
-        res.status(404).send('Pedido no encontrado');
+    try {
+        const result = await pool.query(
+            'UPDATE pedidos SET status = $1 WHERE id = $2 RETURNING *',
+            [status, id]
+        );
+        
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.status(404).send('Pedido no encontrado');
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error al actualizar pedido');
     }
 });
 
