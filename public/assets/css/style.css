@@ -57,10 +57,26 @@ h1 {
     text-shadow: 0 4px 10px rgba(255, 204, 0, 0.2);
 }
 
+.menu-section-title {
+    color: var(--light);
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    text-align: left;
+    padding-left: 10px;
+    border-left: 4px solid var(--secondary);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 15px;
+    border-radius: 4px;
+}
+
 .menu-list {
     list-style: none;
     padding: 0;
-    margin-bottom: 40px;
+    margin-bottom: 20px;
 }
 
 .menu-item {
