@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hot Dogs - Gestión de Inventario</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/admin.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .inventory-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .toggle-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .btn-on { background: var(--success); color: white; }
+        .btn-off { background: var(--danger); color: white; }
+    </style>
+</head>
+<body>
+
+    <div id="main-container" class="container admin-mode">
+        <div id="admin-panel">
+            <div class="admin-header">
+                <h1>Gestión de Inventario</h1>
+                <a href="admin.html" class="btn-action" style="background: #444; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px;">Volver al Dashboard</a>
+            </div>
+            
+            <div id="inventory-list" style="text-align: left; margin-top: 30px;">
+                <!-- Cargado por JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- JS -->
+    <script src="assets/js/config.js"></script>
+    <script>
+        // Lógica simple para la página de inventario
+        async function getProductos() {
+            const response = await fetch('/api/productos');
+            return await response.json();
+        }
+
+        async function toggleDisponibilidad(id, disponibleActual) {
+            try {
+                await fetch(`/api/productos/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ disponible: !disponibleActual })
+                });
+                renderInventory();
+            } catch (e) {
+                console.error("Error al actualizar inventario:", e);
+            }
+        }
+
+        async function renderInventory() {
+            const container = document.getElementById('inventory-list');
+            if (!container) return;
+
+            try {
+                const productos = await getProductos();
+                container.innerHTML = '';
+
+                productos.forEach(producto => {
+                    const div = document.createElement('div');
+                    div.className = 'inventory-item';
+                    div.innerHTML = `
+                        <div>
+                            <strong style="font-size: 1.1rem;">${producto.nombre}</strong><br>
+                            <small style="color: #888;">${producto.categoria}</small>
+                        </div>
+                        <button class="toggle-btn ${producto.disponible ? 'btn-on' : 'btn-off'}" 
+                                onclick="toggleDisponibilidad(${producto.id}, ${producto.disponible})">
+                            ${producto.disponible ? 'Disponible' : 'No disponible'}
+                        </button>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (e) {
+                console.error("Error al renderizar inventario:", e);
+            }
+        }
+
+        window.onload = function() {
+            // Reutilizar seguridad de admin
+            if (sessionStorage.getItem('isAdmin') !== 'true') {
+                const password = prompt("Por favor, ingresa la contraseña de administrador:");
+                if (password === window.CONFIG.ADMIN_PASSWORD) {
+                    sessionStorage.setItem('isAdmin', 'true');
+                } else {
+                    alert("Acceso denegado.");
+                    window.location.href = "index.html";
+                    return;
+                }
+            }
+            renderInventory();
+        };
+    </script>
+</body>
+</html>

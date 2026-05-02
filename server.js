@@ -17,6 +17,19 @@ const TIMEZONE = 'America/Mazatlan';
 let pedidos = [];
 let lastResetDate = new Date().toLocaleDateString('es-MX', { timeZone: TIMEZONE });
 
+let productos = [
+    { id: 1, nombre: 'Hamburguesa', precio: 95, categoria: 'Comida', disponible: true },
+    { id: 2, nombre: 'Hot dog', precio: 35, categoria: 'Comida', disponible: true },
+    { id: 3, nombre: 'Quesaburro', precio: 110, categoria: 'Comida', disponible: true },
+    { id: 4, nombre: 'Papas', precio: 45, categoria: 'Comida', disponible: true },
+    { id: 5, nombre: 'Coca Cola', precio: 25, categoria: 'Bebidas', disponible: true },
+    { id: 6, nombre: 'Sprite', precio: 25, categoria: 'Bebidas', disponible: true },
+    { id: 7, nombre: 'Pepsi', precio: 25, categoria: 'Bebidas', disponible: true },
+    { id: 8, nombre: 'Mirinda', precio: 25, categoria: 'Bebidas', disponible: true },
+    { id: 9, nombre: '7up', precio: 25, categoria: 'Bebidas', disponible: true },
+    { id: 10, nombre: 'Agua', precio: 20, categoria: 'Bebidas', disponible: true }
+];
+
 // Función para reiniciar a medianoche
 function checkMidnightReset() {
     const today = new Date().toLocaleDateString('es-MX', { timeZone: TIMEZONE });
@@ -31,6 +44,24 @@ function checkMidnightReset() {
 setInterval(checkMidnightReset, 60000);
 
 // --- Endpoints API ---
+
+// Obtener inventario de productos
+app.get('/api/productos', (req, res) => {
+    res.json(productos);
+});
+
+// Actualizar disponibilidad de un producto
+app.put('/api/productos/:id', (req, res) => {
+    const { id } = req.params;
+    const { disponible } = req.body;
+    const producto = productos.find(p => p.id === parseInt(id));
+    if (producto) {
+        producto.disponible = disponible;
+        res.json(producto);
+    } else {
+        res.status(404).send('Producto no encontrado');
+    }
+});
 
 // Reiniciar el día manualmente
 app.delete('/api/pedidos', (req, res) => {

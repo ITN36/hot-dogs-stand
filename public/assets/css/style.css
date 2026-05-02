@@ -157,6 +157,22 @@ h1 {
     color: black;
 }
 
+.no-disponible {
+    opacity: 0.5;
+    filter: grayscale(0.8);
+    pointer-events: none;
+}
+
+.status-badge {
+    background: #444;
+    color: #aaa;
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
 @keyframes slideDown {
     from { transform: translateY(-50px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
