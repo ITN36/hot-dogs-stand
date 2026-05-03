@@ -31,10 +31,11 @@ pool.on('error', (err, client) => {
     console.error('Unexpected error on idle client', err);
 });
 
-// Inicializar tabla si no existe
+// Inicializar tablas si no existen
 async function initDb() {
     if (!process.env.DATABASE_URL) return;
     try {
+        // Tabla de pedidos
         await pool.query(`
             CREATE TABLE IF NOT EXISTS pedidos (
                 id INTEGER PRIMARY KEY,
@@ -42,7 +43,44 @@ async function initDb() {
                 timestamp VARCHAR(10) NOT NULL
             )
         `);
-        console.log("Tabla 'pedidos' lista o ya existente.");
+        
+        // Tabla de productos
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS productos (
+                id INTEGER PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL,
+                precio INTEGER NOT NULL,
+                categoria VARCHAR(50) NOT NULL,
+                disponible BOOLEAN NOT NULL DEFAULT TRUE
+            )
+        `);
+
+        // Verificar si hay productos, si no, insertar iniciales
+        const res = await pool.query('SELECT COUNT(*) FROM productos');
+        if (parseInt(res.rows[0].count) === 0) {
+            const initialProducts = [
+                [1, 'Hamburguesa', 95, 'Comida', true],
+                [2, 'Hot dog', 35, 'Comida', true],
+                [3, 'Quesaburro', 110, 'Comida', true],
+                [4, 'Papas', 45, 'Comida', true],
+                [5, 'Coca Cola', 25, 'Bebidas', true],
+                [6, 'Sprite', 25, 'Bebidas', true],
+                [7, 'Pepsi', 25, 'Bebidas', true],
+                [8, 'Mirinda', 25, 'Bebidas', true],
+                [9, '7up', 25, 'Bebidas', true],
+                [10, 'Agua', 20, 'Bebidas', true]
+            ];
+
+            for (const p of initialProducts) {
+                await pool.query(
+                    'INSERT INTO productos (id, nombre, precio, categoria, disponible) VALUES ($1, $2, $3, $4, $5)',
+                    p
+                );
+            }
+            console.log("Productos iniciales cargados en la base de datos.");
+        }
+
+        console.log("Tablas de la base de datos listas.");
     } catch (err) {
         console.error("Error inicializando la base de datos:", err);
     }
@@ -50,21 +88,8 @@ async function initDb() {
 
 initDb();
 
-// Almacenamiento en memoria (se mantiene solo lastResetDate)
+// Almacenamiento en memoria (solo para control de reinicio)
 let lastResetDate = new Date().toLocaleDateString('es-MX', { timeZone: TIMEZONE });
-
-let productos = [
-    { id: 1, nombre: 'Hamburguesa', precio: 95, categoria: 'Comida', disponible: true },
-    { id: 2, nombre: 'Hot dog', precio: 35, categoria: 'Comida', disponible: true },
-    { id: 3, nombre: 'Quesaburro', precio: 110, categoria: 'Comida', disponible: true },
-    { id: 4, nombre: 'Papas', precio: 45, categoria: 'Comida', disponible: true },
-    { id: 5, nombre: 'Coca Cola', precio: 25, categoria: 'Bebidas', disponible: true },
-    { id: 6, nombre: 'Sprite', precio: 25, categoria: 'Bebidas', disponible: true },
-    { id: 7, nombre: 'Pepsi', precio: 25, categoria: 'Bebidas', disponible: true },
-    { id: 8, nombre: 'Mirinda', precio: 25, categoria: 'Bebidas', disponible: true },
-    { id: 9, nombre: '7up', precio: 25, categoria: 'Bebidas', disponible: true },
-    { id: 10, nombre: 'Agua', precio: 20, categoria: 'Bebidas', disponible: true }
-];
 
 // Función para reiniciar a medianoche
 async function checkMidnightReset() {
@@ -73,8 +98,8 @@ async function checkMidnightReset() {
         console.log("Reinicio automático de medianoche ejecutado.");
         try {
             await pool.query('TRUNCATE TABLE pedidos');
-            // Reiniciar disponibilidad de productos
-            productos.forEach(p => p.disponible = true);
+            // Reiniciar disponibilidad de productos en la DB
+            await pool.query('UPDATE productos SET disponible = true');
             lastResetDate = today;
         } catch (err) {
             console.error("Error en reinicio automático:", err);
@@ -88,20 +113,33 @@ setInterval(checkMidnightReset, 60000);
 // --- Endpoints API ---
 
 // Obtener inventario de productos
-app.get('/api/productos', (req, res) => {
-    res.json(productos);
+app.get('/api/productos', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM productos ORDER BY id ASC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error al obtener productos');
+    }
 });
 
 // Actualizar disponibilidad de un producto
-app.put('/api/productos/:id', (req, res) => {
+app.put('/api/productos/:id', async (req, res) => {
     const { id } = req.params;
     const { disponible } = req.body;
-    const producto = productos.find(p => p.id === parseInt(id));
-    if (producto) {
-        producto.disponible = disponible;
-        res.json(producto);
-    } else {
-        res.status(404).send('Producto no encontrado');
+    try {
+        const result = await pool.query(
+            'UPDATE productos SET disponible = $1 WHERE id = $2 RETURNING *',
+            [disponible, id]
+        );
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.status(404).send('Producto no encontrado');
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error al actualizar producto');
     }
 });
 
@@ -109,8 +147,8 @@ app.put('/api/productos/:id', (req, res) => {
 app.delete('/api/pedidos', async (req, res) => {
     try {
         await pool.query('TRUNCATE TABLE pedidos');
-        // Reiniciar disponibilidad de productos
-        productos.forEach(p => p.disponible = true);
+        // Reiniciar disponibilidad de productos en la DB
+        await pool.query('UPDATE productos SET disponible = true');
         res.status(204).send();
     } catch (err) {
         console.error(err);
